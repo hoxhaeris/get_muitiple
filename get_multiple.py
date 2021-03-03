@@ -1,12 +1,12 @@
 import asyncio
 import concurrent.futures
 from asyncio import Future
-from typing import Callable, Tuple, Set, Generator,
+from typing import Tuple, Set, Generator
 import aiohttp
+
 
 class FetchMultiple:
     data_input: dict
-    process_function: Callable = None
 
     def __init__(self,
                  data_input: dict,
@@ -57,15 +57,18 @@ class FetchMultiple:
             for finished_task in data:
                 futures_dict.setdefault(finished_task.get_name())
                 result_dict.setdefault(finished_task.get_name())
-                futures_dict[finished_task.get_name()] = executor.submit(self.data_input[finished_task.get_name()]['function'], finished_task.result())
+                futures_dict[finished_task.get_name()] = executor.submit(
+                    self.data_input[finished_task.get_name()]['function'], finished_task.result())
             for task_name, future in futures_dict.items():
                 result_dict[task_name] = future.result()
             return result_dict
 
     def get_and_only_process_data(self) -> None:
         """Process the fetched data, without returning anything (if you want to store this data to a file,
-        or database, or similar action) """
+        database, or similar action). This expects I/O function types and is using ThreadPoolExecutor"""
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = []
-            [futures.append(executor.submit(self.data_input[finished_task.get_name()]['function'], finished_task.result())) for finished_task in self.get()]
+            [futures.append(
+                executor.submit(self.data_input[finished_task.get_name()]['function'], finished_task.result())) for
+             finished_task in self.get()]
             [future.result() for future in futures]
