@@ -3,6 +3,9 @@ import concurrent.futures
 from asyncio import Future
 from typing import Tuple, Set, Generator
 import aiohttp
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class FetchMultiple:
@@ -10,21 +13,33 @@ class FetchMultiple:
 
     def __init__(self,
                  data_input: dict,
+                 enable_ssl: bool = True
                  ):
         self.data_input = data_input
+        self.enable_ssl = enable_ssl
 
     @staticmethod
-    async def fetch_page(url: str, session: aiohttp.client.ClientSession) -> str:
+    async def fetch_page(url: str, session: aiohttp.client.ClientSession, headers: dict = None) -> str:
         """fetch the remote data, using the same session. Returns a string"""
-        async with session.get(url) as res:
-            return await res.text()
+        try:
+            async with session.get(url, headers=headers) as res:
+                return await res.text()
+        except aiohttp.client_exceptions.ClientConnectorError as x:
+            logger.error(x)
 
     async def dispatch(self) -> Tuple[Set[Future], Set[Future]]:
         """returns the asyncio task-list"""
         task_list = []
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=self.enable_ssl)) as session:
             for task_name, details in self.data_input.items():
-                task_list.append(asyncio.create_task(self.fetch_page(url=details["url"], session=session),
+                try:
+                    headers = details["headers"]
+                except KeyError:
+                    logger.debug(f"No headers key configured for {task_name}")
+                    headers = None
+                task_list.append(asyncio.create_task(self.fetch_page(url=details["url"],
+                                                                     session=session,
+                                                                     headers=headers),
                                                      name=task_name))
             return await asyncio.wait(task_list)
 
@@ -57,10 +72,17 @@ class FetchMultiple:
             for finished_task in data:
                 futures_dict.setdefault(finished_task.get_name())
                 result_dict.setdefault(finished_task.get_name())
-                futures_dict[finished_task.get_name()] = executor.submit(
-                    self.data_input[finished_task.get_name()]['function'], finished_task.result())
+                try:
+                    futures_dict[finished_task.get_name()] = executor.submit(
+                        self.data_input[finished_task.get_name()]['function'], finished_task.result())
+                except KeyError:
+                    logger.debug(f"No function key configured for {finished_task.get_name()}")
+                    futures_dict[finished_task.get_name()] = finished_task.result()
             for task_name, future in futures_dict.items():
-                result_dict[task_name] = future.result()
+                try:
+                    result_dict[task_name] = future.result()
+                except AttributeError:
+                    result_dict[task_name] = futures_dict[task_name]
             return result_dict
 
     def get_and_only_process_data(self) -> None:
@@ -70,5 +92,5 @@ class FetchMultiple:
             futures = []
             [futures.append(
                 executor.submit(self.data_input[finished_task.get_name()]['function'], finished_task.result())) for
-             finished_task in self.get()]
+                finished_task in self.get()]
             [future.result() for future in futures]
