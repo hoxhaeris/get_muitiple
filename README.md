@@ -1,8 +1,9 @@
 # Get Multiple
 Fetch multipe web resources using asyncio.
 
-This class is using asyncio (aiohttp lib) to fetch multiple resources from web. 
+This class (FetchMultiple) is using asyncio (aiohttp lib) to fetch multiple resources from web. 
 You can define a processing function for each resource, and get a key-value return (using multithreading for processing).
+The result can be obtained processed, unprocessed (raw response), or mapped (key:value).
 
 Example usage:
 
