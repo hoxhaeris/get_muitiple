@@ -57,4 +57,5 @@ The fetch_object is a dictionary of dictionares.
 The key is the task name, that contains this keys:
 - url : the URL
 - function: the processing function for the fetched data
+
 If no function is defined, the unprocessed data is returned. 
