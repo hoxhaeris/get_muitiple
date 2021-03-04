@@ -76,13 +76,13 @@ Input example:
             "function": process_page,
         },
         "nomad_task": {
-            "url": "https://nomad.testing/v1/job/somejob/allocations",
-            "function": parse_json,
+            "url": "https://nomad.testing/v1/job/some_job/allocations/url_does_not_exist",
             "headers": {"X-Nomad-Token": "45648-fake-token-5457869-57997"}
         },
         "github_task": {
-            "url": "https://github.com/hoxhaeri/someproject/file?raw",
-            "headers": {"Authorization": f'Bearer jsdoidrtopiopi_fake_token_soifojdio3534'}
+            "url": "https://api.github.com/users/octocat/orgs",
+            "function": parse_json,
+            "headers": {"Authorization": f'token OAUTH-TOKEN'}
         }
     }
 
