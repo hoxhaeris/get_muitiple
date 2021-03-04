@@ -57,6 +57,33 @@ Result:
 The fetch_object is a dictionary of dictionares. 
 The key is the task name, that contains this keys:
 - url : the URL
-- function: the processing function for the fetched data
+- function: the processing function for the fetched data (optional)
+- headers (optional)
 
-If no function is defined, the unprocessed data is returned. 
+Input example:
+
+    fetch_objects = {
+        "google_task": {
+            "url": "https://google.com",
+            "function": process_page,
+        },
+        "yahoo_task": {
+            "url": "https://yahoo.com",
+            "function": another_processing_function,
+        },
+        "stackoverflow_task": {
+            "url": "https://stackoverflow.com/",
+            "function": process_page,
+        },
+        "nomad_task": {
+            "url": "https://nomad.testing/v1/job/somejob/allocations",
+            "function": parse_json,
+            "headers": {"X-Nomad-Token": "45648-fake-token-5457869-57997"}
+        },
+        "github_task": {
+            "url": "https://github.com/hoxhaeri/someproject/file?raw",
+            "headers": {"Authorization": f'Bearer jsdoidrtopiopi_fake_token_soifojdio3534'}
+        }
+    }
+
+If no function is defined, the unprocessed data is returned. If no headers are provided, no headers are used for that connection
